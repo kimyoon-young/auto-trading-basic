@@ -4,7 +4,7 @@ from PyQt5 import uic
 from PyQt5.QtCore import *
 import pybithumb
 
-tickers = ["BTC" , "ETH", "BCH", "ETC"]
+tickers = ["BTC" ,"EOS"]
 form_class = uic.loadUiType("bull.ui")[0]
 
 class MyWindow(QMainWindow, form_class):
