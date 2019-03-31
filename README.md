@@ -1,8 +1,9 @@
 # auto-trading-basic
 
 
-#install
+## install
 
 ```
 pip install -U pybithumb
+pip install 
 ```
