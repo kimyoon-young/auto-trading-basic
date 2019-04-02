@@ -3,9 +3,11 @@ from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import *
 import pybithumb
+import time
 
-tickers = ["BTC","ETH","EOS","TRX"]
+tickers = ["BTC","ETH","EOS","TRX","BCH","ADA"]
 form_class = uic.loadUiType("view.ui")[0]
+
 
 
 class MyWindow(QMainWindow, form_class):
@@ -17,7 +19,8 @@ class MyWindow(QMainWindow, form_class):
         timer = QTimer(self)
         timer.start(1000)
         timer.timeout.connect(self.timeout)
-
+        #self.datetime = QDateTime.currentDateTime()
+        #self.statusBar().showMessage(self.datetime.toString(Qt.DefaultLocaleLongDate))
     def timeout(self):
         for i, ticker in enumerate(tickers):
             item = QTableWidgetItem(ticker)
@@ -28,6 +31,9 @@ class MyWindow(QMainWindow, form_class):
             self.tableWidget.setItem(i, 2, QTableWidgetItem(str(volume)))
             self.tableWidget.setItem(i, 3, QTableWidgetItem(str(last_ma5)))
             self.tableWidget.setItem(i, 4, QTableWidgetItem(str(last_ma20)))
+            self.datetime = QDateTime.currentDateTime()
+            self.statusBar().showMessage(self.datetime.toString(Qt.DefaultLocaleLongDate))
+
 
     def get_market_infos(self, ticker):
         df = pybithumb.get_ohlcv(ticker)
@@ -39,6 +45,8 @@ class MyWindow(QMainWindow, form_class):
         last_ma20 = ma20[-2]
         price = pybithumb.get_current_price(ticker)
 
+        #all_data = pybithumb.get_current_price("ALL")
+        # for ticker, data in all.items()
         return price, volume, last_ma5, last_ma20
 
 app = QApplication(sys.argv)
