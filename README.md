@@ -5,4 +5,5 @@
 
 ```
 pip install -U pybithumb
+pip install openpyxl
 ```
