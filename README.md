@@ -5,6 +5,7 @@ the details was posted [here](https://blog.naver.com/kyy0810/221498289772)(korea
 
 ```
 pip install -U pybithumb
+pip install openpyxl
 ```
 
 
