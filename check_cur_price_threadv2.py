@@ -50,17 +50,14 @@ class Worker(QThread):
             # 가격 변동폭 : 전일 고가 - 전일 저가
             # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
             # 매도 기준: 당일 종가에 매도
-            target = today_open + (yesterday_high - yesterday_low) * 0.5
+            target = today_open + (yesterday_high - yesterday_low) * 0.01
 
-
-            if price > target and (price > ma5):
-                rising="상승장"
-            else :
-                rising="하락장"
-
-
+            rising = "-"
+            if price > target and price > last_ma5:
+                rising = "상승장"
 
             return price, last_ma5, last_ma20, rising
+
         except:
             None, None, None, None
 
@@ -100,10 +97,8 @@ class MyWindow(QMainWindow, form_class):
             self.tableWidget.setItem(i, 1, QTableWidgetItem(str(infos[0])))
             self.tableWidget.setItem(i, 2, QTableWidgetItem(str(infos[3])))
             # 상승장이면 빨간색으로 넣어줌
-            if infos[1] == "상승장" :
+            if infos[3] == "상승장" :
                 self.tableWidget.item(i, 2).setBackground(QColor(255, 0, 0))
-            else:
-                self.tableWidget.item(i, 2).setBackground(QColor(0, 0, 255))
 
             self.tableWidget.setItem(i, 3, QTableWidgetItem(str('%.4f' % float(infos[4]))))
             self.tableWidget.setItem(i, 4, QTableWidgetItem(str(infos[5] + '%')))
