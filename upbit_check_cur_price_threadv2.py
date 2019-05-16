@@ -6,108 +6,107 @@ import pybithumb
 import pyupbit
 import time
 from PyQt5.QtGui import QColor
+from upbitpy import Upbitpy
 
-tickers = ["KRW-BTC","KRW-ETH","KRW-EOS","KRW-TRX","KRW-BCH","KRW-ADA"]
-form_class = uic.loadUiType("view2.ui")[0]
+tickers = ["KRW-BTC","KRW-ETH","KRW-EOS","KRW-TRX","KRW-BCH","KRW-ADA", 'KRW-XRP', 'KRW-LTC', 'KRW-XEM', 'KRW-QTUM']
+form_class = uic.loadUiType("view3.ui")[0]
 
 
-class Bithumb_Worker(QThread):
+class Worker(QThread):
     finished = pyqtSignal(dict)
 
     def run(self):
         while True:
             data = {}
             # 전체 데이터 불러옴
-            all_data = pyupbit.get_current_price(tickers)
-            for ticker in all_data.items() :
-                if ticker in tickers:
-                    data[ticker] = self.get_market_infos(ticker)
+            #all_data = pyupbit.get_current_price(tickers)
+            upbit = Upbitpy()
+            all_info = upbit.get_ticker(tickers)
+
+            # 단기 급등여부 판단
+            candle_num = 3
+            for ticker in all_info:
+                candle_dict = upbit.get_minutes_candles(1, ticker['market'], count=3)
+
+                last = candle_dict[0]['candle_acc_trade_volume']
+                last_one = candle_dict[1]['candle_acc_trade_volume']
+                last_two = candle_dict[2]['candle_acc_trade_volume']
+
+
+                if "KRW-BTC" == ticker['market']:
+                    print('----비트코인 거래량-----')
+                    print('현재: ' + str(last))
+                    print('1분전: ' + str(last_one))
+                    print('2분전: ' + str(last_two))
+
+                if "KRW-BCH" == ticker['market']:
+                    print('----비캐 거래량-----')
+                    print('현재: ' + str(last))
+                    print('1분전: ' + str(last_one))
+                    print('2분전: ' + str(last_two))
+
+                if "KRW-XRP" == ticker['market']:
+                    print('----리플 거래량-----')
+                    print('현재: ' + str(last))
+                    print('1분전: ' + str(last_one))
+                    print('2분전: ' + str(last_two))
+
+                #min_value = 9e+20
+                #for data in range( 1, candle_list-1) :
+                #    if data['candle_acc_trade_volume'] < min_value:
+                #        min_value = data['candle_acc_trade_volume']
+
+                #-거래량 체크
+                volume_rising = '-'
+                volume_change_rate = 0.0
+                if last > last_one*1.4 or (last > last_one*1.2 and last_one > last_two*1.2):
+                    volume_rising = '급증'
+                    volume_change_rate = (last - last_one) / last_one * 100
+                    #print(volume_change_rate)
+
+
+                cur_price = ticker['trade_price']
+                volume = ticker['acc_trade_volume_24h']
+                signed_change_rate = ticker['signed_change_rate']
+
+
+                # #--상승장 체크
+                # df = pyupbit.get_ohlcv(ticker['market'])
+                # ma5 = df['close'].rolling(window=5).mean()
+                # #ma20 = df['close'].rolling(window=20).mean()
+                # # 전일 이동 평균
+                # last_ma5 = ma5[-2]
+                #
+                # # target 가를 얻어옴.
+                # # 뒤에서 부터 마지막 일봉값. 예) df.iloc[-1] 는 today
+                # yesterday = df.iloc[-2]
+                #
+                # today_open = yesterday['close']
+                # yesterday_high = yesterday['high']
+                # yesterday_low = yesterday['low']
+                #
+                # # 가격 변동폭 : 전일 고가 - 전일 저가
+                # # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
+                # # 매도 기준: 당일 종가에 매도
+                # target = today_open + (yesterday_high - yesterday_low) * 0.5
+                #
+                #
+                # rising = "-"
+                # if cur_price > target and cur_price > last_ma5:
+                #     rising = "상승장"
+                #
+                # #--
+
+                #print(ticker['market'])
+
+                data[ticker['market']] = (cur_price,) +  (volume,) + (signed_change_rate,) + (volume_rising,) + (int(volume_change_rate),)
+
 
             # 작업이 완료됐을때 이벤트 발생(emit)
             # data 변수가 바인딩하고 있는 딕셔너리 객체가 전송됨
             self.finished.emit(data)
             time.sleep(1)
 
-    def get_market_infos(self, ticker):
-        try:
-
-            df = pybithumb.get_ohlcv(ticker)
-            ma5 = df['close'].rolling(window=5).mean()
-            ma20 = df['close'].rolling(window=20).mean()
-            # 전일 이동 평균
-            last_ma5 = ma5[-2]
-            last_ma20 = ma20[-2]
-            price = pybithumb.get_current_price(ticker)
-
-            # target 가를 얻어옴.
-            # 뒤에서 부터 마지막 일봉값. 예) df.iloc[-1] 는 today
-            yesterday = df.iloc[-2]
-
-            today_open = yesterday['close']
-            yesterday_high = yesterday['high']
-            yesterday_low = yesterday['low']
-            # 가격 변동폭 : 전일 고가 - 전일 저가
-            # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
-            # 매도 기준: 당일 종가에 매도
-            target = today_open + (yesterday_high - yesterday_low) * 0.5
-
-            rising = "-"
-            if price > target and price > last_ma5:
-                rising = "상승장"
-
-            return price, last_ma5, last_ma20, rising
-
-        except:
-            None, None, None, None
-
-
-class Upbit_Worker(QThread):
-    finished = pyqtSignal(dict)
-
-    def run(self):
-        while True:
-            data = {}
-            # 전체 데이터 불러옴
-            all_data = pyupbit.get_current_price(tickers)
-            for ticker, price in all_data.items() :
-                data[ticker] = self.get_market_infos(ticker)
-
-            # 작업이 완료됐을때 이벤트 발생(emit)
-            # data 변수가 바인딩하고 있는 딕셔너리 객체가 전송됨
-            self.finished.emit(data)
-            time.sleep(1)
-
-    def get_market_infos(self, ticker):
-        try:
-
-            df = pyupbit.get_ohlcv(ticker)
-            ma5 = df['close'].rolling(window=5).mean()
-            ma20 = df['close'].rolling(window=20).mean()
-            # 전일 이동 평균
-            last_ma5 = ma5[-2]
-            last_ma20 = ma20[-2]
-            price = pyupbit.get_current_price(ticker)
-
-            # target 가를 얻어옴.
-            # 뒤에서 부터 마지막 일봉값. 예) df.iloc[-1] 는 today
-            yesterday = df.iloc[-2]
-
-            today_open = yesterday['close']
-            yesterday_high = yesterday['high']
-            yesterday_low = yesterday['low']
-            # 가격 변동폭 : 전일 고가 - 전일 저가
-            # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
-            # 매도 기준: 당일 종가에 매도
-            target = today_open + (yesterday_high - yesterday_low) * 0.5
-
-            rising = "-"
-            if price > target and price > last_ma5:
-                rising = "상승장"
-
-            return price, last_ma5, last_ma20, rising
-
-        except:
-            None, None, None, None
 
 
 
@@ -116,11 +115,11 @@ class MyWindow(QMainWindow, form_class):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle('업비트 시세 조회기')
-        self.worker = Upbit_Worker()
+        self.worker = Worker()
         self.worker.finished.connect(self.update_table_widget)
         self.worker.start()
 
-        # 5초마다 호출
+        # 1초마다 호출
         timer = QTimer(self)
         timer.start(1000)
         timer.timeout.connect(self.timeout)
@@ -138,21 +137,33 @@ class MyWindow(QMainWindow, form_class):
     def update_table_widget(self,data):
 
 
+        #todo 상승장 혹은 급증인것 최상단 올리기
         for ticker, infos in data.items():
             i = tickers.index(ticker)
 
             # 현재 상승장 여부를 읽어옴
             self.tableWidget.setItem(i, 0, QTableWidgetItem(ticker))
             self.tableWidget.setItem(i, 1, QTableWidgetItem(str(infos[0])))
-            self.tableWidget.setItem(i, 2, QTableWidgetItem(str(infos[3])))
-            # 상승장이면 빨간색으로 넣어줌
-            if infos[3] == "상승장" :
-                self.tableWidget.item(i, 2).setBackground(QColor(255, 0, 0))
 
             #self.tableWidget.setItem(i, 3, QTableWidgetItem(str('%.4f' % float(infos[4]))))
             #self.tableWidget.setItem(i, 4, QTableWidgetItem(str(infos[5] + '%')))
-            self.tableWidget.setItem(i, 5, QTableWidgetItem(str('%.4f' % infos[1])))
-            self.tableWidget.setItem(i, 6, QTableWidgetItem(str('%.4f' % infos[2])))
+            self.tableWidget.setItem(i, 2, QTableWidgetItem(str('%.4f' % infos[1])))
+            self.tableWidget.setItem(i, 3, QTableWidgetItem(str('%.2f' % (infos[2]*100)+'%')))
+
+            # 거래량 증가하면 빨간색으로 넣어줌
+            if infos[3] == "급증":
+                #print(infos[4])
+                text= '급증(' + str(infos[4])+'%' + ')'
+                #print(text)
+                self.tableWidget.setItem(i, 4, QTableWidgetItem(text))
+                self.tableWidget.item(i, 4).setBackground(QColor(255, 0, 0))
+
+            else :
+                self.tableWidget.setItem(i, 4, QTableWidgetItem('-'))
+                self.tableWidget.item(i, 4).setBackground(QColor(255, 255, 255))
+
+            #if infos[4] == "상승장":
+            #    self.tableWidget.item(i, 5).setBackground(QColor(255, 0, 0))
 
 
 app = QApplication(sys.argv)
