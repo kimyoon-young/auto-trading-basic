@@ -66,38 +66,11 @@ class Worker(QThread):
 
 
                 cur_price = ticker['trade_price']
+                # 24H 거래량
                 volume = ticker['acc_trade_volume_24h']
+                # 부호 있는 거래량 변화율
                 signed_change_rate = ticker['signed_change_rate']
 
-
-                # #--상승장 체크
-                # df = pyupbit.get_ohlcv(ticker['market'])
-                # ma5 = df['close'].rolling(window=5).mean()
-                # #ma20 = df['close'].rolling(window=20).mean()
-                # # 전일 이동 평균
-                # last_ma5 = ma5[-2]
-                #
-                # # target 가를 얻어옴.
-                # # 뒤에서 부터 마지막 일봉값. 예) df.iloc[-1] 는 today
-                # yesterday = df.iloc[-2]
-                #
-                # today_open = yesterday['close']
-                # yesterday_high = yesterday['high']
-                # yesterday_low = yesterday['low']
-                #
-                # # 가격 변동폭 : 전일 고가 - 전일 저가
-                # # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
-                # # 매도 기준: 당일 종가에 매도
-                # target = today_open + (yesterday_high - yesterday_low) * 0.5
-                #
-                #
-                # rising = "-"
-                # if cur_price > target and cur_price > last_ma5:
-                #     rising = "상승장"
-                #
-                # #--
-
-                #print(ticker['market'])
 
                 data[ticker['market']] = (cur_price,) +  (volume,) + (signed_change_rate,) + (volume_rising,) + (int(volume_change_rate),)
 
