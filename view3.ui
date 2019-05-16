@@ -125,11 +125,6 @@
       <string>거래량급증</string>
      </property>
     </column>
-    <column>
-     <property name="text">
-      <string>상승장여부</string>
-     </property>
-    </column>
    </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
@@ -141,7 +136,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>업비트</string>
+     <string>업비트 시세조회</string>
     </property>
    </widget>
   </widget>
