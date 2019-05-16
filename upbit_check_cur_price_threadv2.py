@@ -9,7 +9,7 @@ from PyQt5.QtGui import QColor
 from upbitpy import Upbitpy
 
 tickers = ["KRW-BTC","KRW-ETH","KRW-EOS","KRW-TRX","KRW-BCH","KRW-ADA", "KRW-LTC",
-           'KRW-XLM', 'KRW-QTUM', 'KRW-BSV']
+           'KRW-XLM', 'KRW-QTUM']
 form_class = uic.loadUiType("view3.ui")[0]
 
 
@@ -29,12 +29,12 @@ class Worker(QThread):
             for ticker in all_info:
                 candle_dict = upbit.get_minutes_candles(1, ticker['market'], count=3)
 
-                last_two = candle_dict[-3]['candle_acc_trade_volume']
-                last_one = candle_dict[-2]['candle_acc_trade_volume']
-                last = candle_dict[-1]['candle_acc_trade_volume']
+                last = candle_dict[0]['candle_acc_trade_volume']
+                last_one = candle_dict[1]['candle_acc_trade_volume']
+                last_two = candle_dict[2]['candle_acc_trade_volume']
 
 
-                if "KRW-BTC" == ticker['market']:
+                if "KRW-ETH" == ticker['market']:
                     print('----거래량-----')
                     print('현재: ' + str(last))
                     print('1분전: ' + str(last_one))
@@ -44,17 +44,46 @@ class Worker(QThread):
                 #    if data['candle_acc_trade_volume'] < min_value:
                 #        min_value = data['candle_acc_trade_volume']
 
+                #-거래량 체크
                 volume_rising = '-'
-                if last > last_one*2 or (last > last_one*1.5 and last_two > last_two*1.5):
-                    rising = '급증'
+                if last > last_one*1.2 or (last > last_one*1.1 and last_two > last_two*1.1):
+                    volume_rising = '급증'
 
                 cur_price = ticker['trade_price']
                 volume = ticker['acc_trade_volume_24h']
                 signed_change_rate = ticker['signed_change_rate']
 
+
+                #--상승장 체크
+                df = pyupbit.get_ohlcv(ticker['market'])
+                ma5 = df['close'].rolling(window=5).mean()
+                #ma20 = df['close'].rolling(window=20).mean()
+                # 전일 이동 평균
+                last_ma5 = ma5[-2]
+
+                # target 가를 얻어옴.
+                # 뒤에서 부터 마지막 일봉값. 예) df.iloc[-1] 는 today
+                yesterday = df.iloc[-2]
+
+                today_open = yesterday['close']
+                yesterday_high = yesterday['high']
+                yesterday_low = yesterday['low']
+
+                # 가격 변동폭 : 전일 고가 - 전일 저가
+                # 매수 기준 :당일 시간에서 (변동폭 * 0.5) 이상 상승하면 매수
+                # 매도 기준: 당일 종가에 매도
+                target = today_open + (yesterday_high - yesterday_low) * 0.5
+
+
+                rising = "-"
+                if cur_price > target and cur_price > last_ma5:
+                    rising = "상승장"
+
+                #--
+
                 #print(ticker['market'])
 
-                data[ticker['market']] = (cur_price,) +  (volume,) + (signed_change_rate,) + (volume_rising,)
+                data[ticker['market']] = (cur_price,) +  (volume,) + (signed_change_rate,) + (volume_rising,) + (rising,)
 
 
             # 작업이 완료됐을때 이벤트 발생(emit)
@@ -106,6 +135,9 @@ class MyWindow(QMainWindow, form_class):
             # 상승장이면 빨간색으로 넣어줌
             if infos[3] == "급증":
                 self.tableWidget.item(i, 4).setBackground(QColor(255, 0, 0))
+
+            if infos[4] == "상승장":
+                self.tableWidget.item(i, 5).setBackground(QColor(255, 0, 0))
 
 
 app = QApplication(sys.argv)
