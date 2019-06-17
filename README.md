@@ -1,5 +1,5 @@
 # auto-trading-basic
-the details was posted [here](https://blog.naver.com/kyy0810/221498289772)(korean version)
+The description is posted on [here](https://blog.naver.com/kyy0810/221498289772)(korean version)
 
 ## install
 
